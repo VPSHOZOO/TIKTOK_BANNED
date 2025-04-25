@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Report Tool</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            margin: 0;
+        }
+        .header {
+            color: #ff00ff;
+            text-align: center;
+            margin-bottom: 20px;
+            white-space: pre;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            color: #add8e6;
+            margin-bottom: 5px;
+        }
+        input, textarea, button {
+            background-color: #222;
+            color: white;
+            border: 1px solid #444;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        input {
+            width: 300px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            padding: 8px 15px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #333;
+        }
+        #output {
+            margin-top: 20px;
+            border: 1px solid #444;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #222;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .success {
+            color: #90ee90;
+        }
+        .error {
+            color: #ff6347;
+        }
+        .warning {
+            color: #ffa500;
+        }
+        .info {
+            color: #add8e6;
+        }
+        .timestamp {
+            color: #ff6347;
+        }
+        .proxy {
+            color: #ffff00;
+        }
+        .controls {
+            margin: 15px 0;
+        }
+        #status {
+            margin-top: 10px;
+            font-style: italic;
+            color: #ffa500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+ TIKTOK BANNED HACKED BY  LORDHOZOO
+        </div>
+
+        <div class="input-group">
+            <label for="username">[?] Username:</label>
+            <input type="text" id="username" placeholder="Enter TikTok username (with or without @)">
+        </div>
+
+        <div class="input-group">
+            <label for="proxies">Proxies (one per line):</label>
+            <textarea id="proxies" placeholder="Enter your proxies in format ip:port"></textarea>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn">Start Reporting</button>
+            <button id="stopBtn" disabled>Stop</button>
+            <button id="clearBtn">Clear Log</button>
+            <span id="status">Ready</span>
+        </div>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameInput = document.getElementById('username');
+            const proxiesInput = document.getElementById('proxies');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const outputDiv = document.getElementById('output');
+            const statusSpan = document.getElementById('status');
+
+            let isRunning = false;
+            let currentProxyIndex = 0;
+            let reportInterval;
+            let proxies = [];
+
+            // Sample proxies if empty (for demo)
+            if (proxiesInput.value.trim() === '') {
+                proxiesInput.value = [
+                    'proxy1.example.com:8080',
+                    'proxy2.example.com:8080',
+                    'proxy3.example.com:8080',
+                    'proxy4.example.com:8080'
+                ].join('\n');
+            }
+
+            startBtn.addEventListener('click', startReporting);
+            stopBtn.addEventListener('click', stopReporting);
+            clearBtn.addEventListener('click', clearLog);
+
+            function addLog(message, type = 'info') {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${type}`;
+                logEntry.innerHTML = `<span class="timestamp">[${timeStr}]</span> ${message}`;
+                outputDiv.appendChild(logEntry);
+                outputDiv.scrollTop = outputDiv.scrollHeight;
+            }
+
+            function clearLog() {
+                outputDiv.innerHTML = '';
+            }
+
+            function updateStatus(message) {
+                statusSpan.textContent = message;
+            }
+
+            function startReporting() {
+                const username = usernameInput.value.trim();
+                if (!username) {
+                    addLog('Please enter a username', 'error');
+                    return;
+                }
+
+                // Clean username (remove @ if present)
+                const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
+                
+                // Get proxies
+                proxies = proxiesInput.value.trim().split('\n').filter(p => p.trim() !== '');
+                if (proxies.length === 0) {
+                    addLog('No proxies provided', 'error');
+                    return;
+                }
+
+                addLog(`Starting reports for @${cleanUsername} using ${proxies.length} proxies`, 'info');
+                updateStatus(`Reporting @${cleanUsername}...`);
+
+                isRunning = true;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                // Start the reporting loop
+                currentProxyIndex = 0;
+                reportInterval = setInterval(() => {
+                    if (!isRunning) return;
+
+                    const proxy = proxies[currentProxyIndex];
+                    sendReport(cleanUsername, proxy);
+
+                    currentProxyIndex = (currentProxyIndex + 1) % proxies.length;
+                }, 3000); // 3 second delay between requests
+            }
+
+            function stopReporting() {
+                isRunning = false;
+                clearInterval(reportInterval);
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                updateStatus('Stopped');
+                addLog('Reporting stopped', 'warning');
+            }
+
+            function sendReport(username, proxy) {
+                // In a real implementation, this would make an actual HTTP request
+                // For this demo, we'll simulate the request with random success/failure
+
+                const success = Math.random() > 0.2; // 80% success rate for demo
+                
+                if (success) {
+                    addLog(`<span class="proxy">Proxy: ${proxy}</span> Report sent to @${username}`, 'success');
+                } else {
+                    addLog(`<span class="proxy">Proxy: ${proxy}</span> Report failed (simulated error)`, 'error');
+                }
+            }
+
+            // Simulate checking for forbidden error (403)
+            function checkForbiddenError() {
+                // 10% chance of simulated forbidden error
+                if (Math.random() < 0.1) {
+                    addLog('403 Forbidden Error: Your request to TikTok was blocked.', 'error');
+                    addLog('Possible actions to resolve this issue:', 'warning');
+                    addLog('- Ensure your IP is not blacklisted by TikTok.', 'info');
+                    addLog('- Try using a different IP address or proxy.', 'info');
+                    addLog('- Wait and try again later if TikTok\'s rate limiting is causing the block.', 'info');
+                    stopReporting();
+                }
+            }
+
+            // Periodically check for forbidden errors (for demo purposes)
+            setInterval(() => {
+                if (isRunning) {
+                    checkForbiddenError();
+                }
+            }, 15000); // Check every 15 seconds
+        });
+    </script>
+</body>
+</html>
